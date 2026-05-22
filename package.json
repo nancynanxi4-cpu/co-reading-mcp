@@ -1,0 +1,36 @@
+{
+  "name": "co-reading-mcp",
+  "version": "0.1.0",
+  "description": "A local co-reading MCP server for chunked books, reading progress, search, and margin annotations.",
+  "type": "module",
+  "author": "Koshi, Claude, and GPT",
+  "files": [
+    "src",
+    "scripts",
+    "docs",
+    "data.example",
+    "README.md",
+    "AUTHORS.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "co-reading-mcp": "./src/server.js"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "smoke": "node scripts/smoke.mjs",
+    "import:text": "python3 scripts/import_text.py",
+    "import:epub": "python3 scripts/import_epub.py"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "reading",
+    "annotations",
+    "epub",
+    "claude"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,92 @@
+import { spawn } from "node:child_process";
+import { cp, mkdtemp, rm } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const tempDataDir = await mkdtemp(path.join(os.tmpdir(), "co-reading-mcp-"));
+await cp(path.join(root, "data.example"), tempDataDir, { recursive: true });
+
+const server = spawn(process.execPath, [path.join(root, "src/server.js")], {
+  env: {
+    ...process.env,
+    READING_MCP_DATA_DIR: tempDataDir,
+  },
+  stdio: ["pipe", "pipe", "inherit"],
+});
+
+let nextId = 1;
+const pending = new Map();
+
+server.stdout.setEncoding("utf8");
+server.stdout.on("data", (chunk) => {
+  for (const line of chunk.split("\n").filter(Boolean)) {
+    const msg = JSON.parse(line);
+    const resolve = pending.get(msg.id);
+    if (resolve) {
+      pending.delete(msg.id);
+      resolve(msg);
+    }
+  }
+});
+
+function request(method, params) {
+  const id = nextId++;
+  server.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`);
+  return new Promise((resolve) => pending.set(id, resolve));
+}
+
+await request("initialize", {});
+const list = await request("tools/call", { name: "reading_list_books", arguments: {} });
+const read = await request("tools/call", {
+  name: "reading_read_chunk",
+  arguments: { bookId: "demo-book", chunkId: "ch00" },
+});
+const search = await request("tools/call", {
+  name: "reading_search_chunks",
+  arguments: { bookId: "demo-book", query: "margin" },
+});
+const firstSubmit = await request("tools/call", {
+  name: "reading_submit_user_notes",
+  arguments: { bookId: "demo-book" },
+});
+const secondSubmit = await request("tools/call", {
+  name: "reading_submit_user_notes",
+  arguments: { bookId: "demo-book" },
+});
+const reply = await request("tools/call", {
+  name: "reading_reply_to_annotation",
+  arguments: { parentId: "ann_demo_user_001", note: "Claude can answer in the margin." },
+});
+const replies = await request("tools/call", {
+  name: "reading_list_annotations",
+  arguments: { parentId: "ann_demo_user_001" },
+});
+
+server.kill();
+await rm(tempDataDir, { recursive: true, force: true });
+
+if (!list.result?.content?.[0]?.text.includes("demo-book")) {
+  throw new Error("reading_list_books did not return demo-book");
+}
+if (!read.result?.content?.[0]?.text.includes("A Small Lamp")) {
+  throw new Error("reading_read_chunk did not return chunk text");
+}
+if (!search.result?.content?.[0]?.text.includes("margin")) {
+  throw new Error("reading_search_chunks did not return a margin snippet");
+}
+if (!firstSubmit.result?.content?.[0]?.text.includes('"count": 1')) {
+  throw new Error("reading_submit_user_notes did not submit the open user note");
+}
+if (!secondSubmit.result?.content?.[0]?.text.includes('"count": 0')) {
+  throw new Error("reading_submit_user_notes submitted the same note twice");
+}
+if (!reply.result?.content?.[0]?.text.includes('"parentId": "ann_demo_user_001"')) {
+  throw new Error("reading_reply_to_annotation did not attach to the parent annotation");
+}
+if (!replies.result?.content?.[0]?.text.includes("Claude can answer in the margin")) {
+  throw new Error("reading_list_annotations did not find the attached reply");
+}
+
+console.log("smoke ok");

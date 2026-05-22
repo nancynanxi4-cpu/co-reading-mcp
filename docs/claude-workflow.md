@@ -1,0 +1,90 @@
+# Claude Reading Workflow
+
+This is the intended agent loop.
+
+## Start a Book
+
+1. Call `reading_list_books`.
+2. Pick a book.
+3. Call `reading_list_chunks`.
+4. Read the first unread chunk with `reading_read_chunk`.
+
+## Continue Reading
+
+After `reading_read_chunk`, use `nextId` from the result. Claude does not need to call `reading_list_chunks` again unless it wants the table of contents.
+
+## Leave a Margin Note
+
+Use `reading_annotate_passage` when a passage is worth keeping.
+
+Suggested `kind` values:
+
+- `annotation`: general note
+- `question`: uncertainty or question
+- `summary`: local summary
+- `feeling`: affective response
+- `resonance`: “this passage is about me / us / the reader”
+
+Example:
+
+```json
+{
+  "bookId": "demo-book",
+  "chunkId": "ch00",
+  "quote": "this line matters because I found myself in it",
+  "note": "This is not a summary. It is a resonance marker.",
+  "kind": "resonance",
+  "mood": "quiet"
+}
+```
+
+## User Notes and Replies
+
+The system is bidirectional. A companion reading UI can let the user mark passages and write notes locally. Those notes should be saved with:
+
+```json
+{
+  "author": "user",
+  "status": "open"
+}
+```
+
+When the user taps a “Send to Claude” button, call `reading_submit_user_notes`. The server returns one batch and changes those notes to `status: "submitted"`, so a later tap does not send duplicates.
+
+Claude can then answer under a user note:
+
+```json
+{
+  "parentId": "ann_user_...",
+  "note": "Claude's reply in the margin.",
+  "kind": "reply"
+}
+```
+
+with `reading_reply_to_annotation`. The reply is stored as a normal annotation with `parentId`, so the UI can render it as a thread under the user's note.
+
+## Mark Progress
+
+When done with a chunk, call:
+
+```json
+{
+  "bookId": "demo-book",
+  "chunkId": "ch00"
+}
+```
+
+with `reading_mark_read`.
+
+## Search
+
+Use `reading_search_chunks` for:
+
+- character names
+- repeated motifs
+- “find where this phrase happened”
+- “show all chunks containing X before continuing”
+
+## Why This Works
+
+The EPUB/text import step makes long books stable and addressable. The MCP server gives Claude small operations with memory: read a chunk, annotate a quote, mark progress, search earlier text. Together they turn long-form reading into a durable process instead of a single prompt.

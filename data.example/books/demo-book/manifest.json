@@ -1,0 +1,32 @@
+{
+  "bookId": "demo-book",
+  "title": "Demo Book",
+  "author": "Example Author",
+  "language": "en",
+  "createdAt": "2026-05-22T00:00:00.000Z",
+  "source": {
+    "type": "example"
+  },
+  "chunks": [
+    {
+      "id": "ch00",
+      "title": "A Small Lamp",
+      "order": 0,
+      "path": "chunks/ch00.txt",
+      "charCount": 331,
+      "wordCount": 62,
+      "prevId": null,
+      "nextId": "ch01"
+    },
+    {
+      "id": "ch01",
+      "title": "A Note in the Margin",
+      "order": 1,
+      "path": "chunks/ch01.txt",
+      "charCount": 302,
+      "wordCount": 56,
+      "prevId": "ch00",
+      "nextId": null
+    }
+  ]
+}
