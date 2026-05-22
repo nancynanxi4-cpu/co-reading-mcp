@@ -168,7 +168,11 @@ def write_book(
     )
 
 
-def sections_from_heading_regex(text: str, heading_regex: str) -> list[dict[str, Any]]:
+def sections_from_heading_regex(
+    text: str,
+    heading_regex: str,
+    min_section_chars: int = 1,
+) -> list[dict[str, Any]]:
     pattern = re.compile(heading_regex, re.MULTILINE)
     matches = list(pattern.finditer(text))
     if not matches:
@@ -180,7 +184,7 @@ def sections_from_heading_regex(text: str, heading_regex: str) -> list[dict[str,
         end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
         section_text = text[start:end].strip()
         title = match.group(1).strip() if match.groups() else match.group(0).strip()
-        if section_text:
+        if section_text and len(section_text) >= min_section_chars:
             sections.append({"title": title, "text": section_text, "sourcePath": None})
     return sections
 
@@ -200,11 +204,17 @@ def main() -> None:
             "group, group 1 becomes the section title; otherwise the full match is used."
         ),
     )
+    parser.add_argument(
+        "--min-section-chars",
+        type=int,
+        default=1,
+        help="When using --heading-regex, skip sections shorter than this many characters.",
+    )
     args = parser.parse_args()
 
     text = args.input.read_text(encoding="utf-8")
     if args.heading_regex:
-        sections = sections_from_heading_regex(text, args.heading_regex)
+        sections = sections_from_heading_regex(text, args.heading_regex, args.min_section_chars)
         if sections:
             book_dir = write_book_sections(
                 sections,
@@ -213,7 +223,11 @@ def main() -> None:
                 args.out,
                 args.book_id,
                 args.max_chars,
-                {"type": "text", "headingRegex": args.heading_regex},
+                {
+                    "type": "text",
+                    "headingRegex": args.heading_regex,
+                    "minSectionChars": args.min_section_chars,
+                },
             )
         else:
             book_dir = write_book(text, args.title, args.author, args.out, args.book_id, args.max_chars)

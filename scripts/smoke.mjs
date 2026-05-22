@@ -201,22 +201,22 @@ await request("initialize", {});
 const list = await request("tools/call", { name: "reading_list_books", arguments: {} });
 const read = await request("tools/call", {
   name: "reading_read_chunk",
-  arguments: { bookId: "demo-book", chunkId: "ch00" },
+  arguments: { bookId: "anthropic-guidelines", chunkId: "ch00" },
 });
 const search = await request("tools/call", {
   name: "reading_search_chunks",
-  arguments: { bookId: "demo-book", query: "margin" },
+  arguments: { bookId: "anthropic-guidelines", query: "values" },
 });
 const firstSubmit = await request("tools/call", {
   name: "reading_submit_user_notes",
-  arguments: { bookId: "demo-book", sessionId: "session-a" },
+  arguments: { bookId: "anthropic-guidelines", sessionId: "session-a" },
 });
 const sameSessionNote = await request("tools/call", {
   name: "reading_annotate_passage",
   arguments: {
-    bookId: "demo-book",
+    bookId: "anthropic-guidelines",
     chunkId: "ch00",
-    quote: "The reader can mark a sentence",
+    quote: "Claude is trained by Anthropic",
     note: "Another local user note in the same chunk.",
     author: "user",
     status: "open",
@@ -224,14 +224,14 @@ const sameSessionNote = await request("tools/call", {
 });
 const sameSessionSubmit = await request("tools/call", {
   name: "reading_submit_user_notes",
-  arguments: { bookId: "demo-book", sessionId: "session-a" },
+  arguments: { bookId: "anthropic-guidelines", sessionId: "session-a" },
 });
 const newSessionNote = await request("tools/call", {
   name: "reading_annotate_passage",
   arguments: {
-    bookId: "demo-book",
+    bookId: "anthropic-guidelines",
     chunkId: "ch00",
-    quote: "The reader can mark a sentence",
+    quote: "Claude is trained by Anthropic",
     note: "A later note after changing sessions.",
     author: "user",
     status: "open",
@@ -239,19 +239,19 @@ const newSessionNote = await request("tools/call", {
 });
 const newSessionSubmit = await request("tools/call", {
   name: "reading_submit_user_notes",
-  arguments: { bookId: "demo-book", sessionId: "session-b" },
+  arguments: { bookId: "anthropic-guidelines", sessionId: "session-b" },
 });
 const secondSubmit = await request("tools/call", {
   name: "reading_submit_user_notes",
-  arguments: { bookId: "demo-book", sessionId: "session-b" },
+  arguments: { bookId: "anthropic-guidelines", sessionId: "session-b" },
 });
 const reply = await request("tools/call", {
   name: "reading_reply_to_annotation",
-  arguments: { parentId: "ann_demo_user_001", note: "Claude can answer in the margin." },
+  arguments: { parentId: "ann_guidelines_user_001", note: "Claude can answer in the margin." },
 });
 const replies = await request("tools/call", {
   name: "reading_list_annotations",
-  arguments: { parentId: "ann_demo_user_001" },
+  arguments: { parentId: "ann_guidelines_user_001" },
 });
 const badBookPath = await request("tools/call", {
   name: "reading_read_chunk",
@@ -263,7 +263,7 @@ const badChunkPath = await request("tools/call", {
 });
 const badMarkRead = await request("tools/call", {
   name: "reading_mark_read",
-  arguments: { bookId: "demo-book", chunkId: "missing-chunk" },
+  arguments: { bookId: "anthropic-guidelines", chunkId: "missing-chunk" },
 });
 
 server.kill();
@@ -322,13 +322,13 @@ for (let attempt = 0; attempt < 30; attempt += 1) {
 }
 if (!httpBooks) throw new Error("HTTP reader API did not start");
 const httpMcpInit = await httpMcpRequest("initialize", {});
-const httpChunk = await fetchJson("/api/books/demo-book/chunks/ch00");
+const httpChunk = await fetchJson("/api/books/anthropic-guidelines/chunks/ch00");
 const httpNote = await fetchJson("/api/annotations", {
   method: "POST",
   body: {
-    bookId: "demo-book",
+    bookId: "anthropic-guidelines",
     chunkId: "ch00",
-    quote: "The reader can mark a sentence",
+    quote: "Claude is trained by Anthropic",
     note: "HTTP reader note.",
   },
 });
@@ -413,19 +413,19 @@ sse.req.destroy();
 sseServer.kill();
 await rm(tempDataDir, { recursive: true, force: true });
 
-if (!list.result?.content?.[0]?.text.includes("demo-book")) {
-  throw new Error("reading_list_books did not return demo-book");
+if (!list.result?.content?.[0]?.text.includes("anthropic-guidelines")) {
+  throw new Error("reading_list_books did not return anthropic-guidelines");
 }
-if (!read.result?.content?.[0]?.text.includes("A Small Lamp")) {
+if (!read.result?.content?.[0]?.text.includes("Claude and the mission of Anthropic")) {
   throw new Error("reading_read_chunk did not return chunk text");
 }
-if (!search.result?.content?.[0]?.text.includes("margin")) {
-  throw new Error("reading_search_chunks did not return a margin snippet");
+if (!search.result?.content?.[0]?.text.includes("values")) {
+  throw new Error("reading_search_chunks did not return a values snippet");
 }
 if (contentJson(firstSubmit).count !== 1) {
   throw new Error("reading_submit_user_notes did not submit the open user note");
 }
-if (!contentJson(firstSubmit).context.chunks[0]?.text.includes("A Small Lamp")) {
+if (!contentJson(firstSubmit).context.chunks[0]?.text.includes("Claude and the mission of Anthropic")) {
   throw new Error("first session submit did not include chunk text");
 }
 if (!contentJson(sameSessionNote).id) {
@@ -440,13 +440,13 @@ if (contentJson(sameSessionSubmit).context.omittedChunks[0]?.reason !== "already
 if (!contentJson(newSessionNote).id) {
   throw new Error("reading_annotate_passage did not create the new-session user note");
 }
-if (!contentJson(newSessionSubmit).context.chunks[0]?.text.includes("A Small Lamp")) {
+if (!contentJson(newSessionSubmit).context.chunks[0]?.text.includes("Claude and the mission of Anthropic")) {
   throw new Error("new-session submit did not re-include chunk text");
 }
 if (contentJson(secondSubmit).count !== 0) {
   throw new Error("reading_submit_user_notes submitted the same note twice");
 }
-if (!reply.result?.content?.[0]?.text.includes('"parentId": "ann_demo_user_001"')) {
+if (!reply.result?.content?.[0]?.text.includes('"parentId": "ann_guidelines_user_001"')) {
   throw new Error("reading_reply_to_annotation did not attach to the parent annotation");
 }
 if (!replies.result?.content?.[0]?.text.includes("Claude can answer in the margin")) {
@@ -461,13 +461,13 @@ if (!badChunkPath.error?.message.includes("Path escapes data directory")) {
 if (!badMarkRead.error?.message.includes("Unknown chunkId")) {
   throw new Error("reading_mark_read did not reject an unknown chunkId");
 }
-if (!httpBooks.some((book) => book.bookId === "demo-book")) {
-  throw new Error("HTTP API did not list demo-book");
+if (!httpBooks.some((book) => book.bookId === "anthropic-guidelines")) {
+  throw new Error("HTTP API did not list anthropic-guidelines");
 }
 if (httpMcpInit.result?.serverInfo?.name !== "co-reading-mcp") {
   throw new Error("HTTP process did not keep MCP stdio active");
 }
-if (!httpChunk.text.includes("A Small Lamp")) {
+if (!httpChunk.text.includes("Claude and the mission of Anthropic")) {
   throw new Error("HTTP API did not read chunk text");
 }
 if (!httpNote.id) {

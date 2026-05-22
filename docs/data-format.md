@@ -6,14 +6,14 @@ Each imported book lives under `data/books/<book-id>/manifest.json`.
 
 ```json
 {
-  "bookId": "demo-book",
-  "title": "Demo Book",
-  "author": "Example Author",
+  "bookId": "anthropic-guidelines",
+  "title": "The Anthropic Guidelines",
+  "author": "Anthropic",
   "chunks": [
     {
       "id": "ch00",
-      "title": "A Small Lamp Part 1/2",
-      "sectionTitle": "A Small Lamp",
+      "title": "Claude and the mission of Anthropic Part 1/2",
+      "sectionTitle": "Claude and the mission of Anthropic",
       "sectionIndex": 0,
       "sectionPart": 1,
       "sectionPartCount": 2,
@@ -38,7 +38,7 @@ Annotations are stored as JSONL in `data/annotations.jsonl`.
 ```json
 {
   "id": "ann_...",
-  "bookId": "demo-book",
+  "bookId": "anthropic-guidelines",
   "chunkId": "ch00",
   "quote": "selected passage",
   "note": "margin note",
@@ -68,7 +68,7 @@ Progress is stored in `data/progress.json`.
 
 ```json
 {
-  "demo-book": {
+  "anthropic-guidelines": {
     "lastChunkId": "ch00",
     "lastReadAt": "2026-05-22T00:00:00.000Z",
     "readChunkIds": ["ch00"]
@@ -85,8 +85,8 @@ Submitted user notes use `data/reading_sessions.json` to avoid sending the same 
   "sessions": {
     "claude-session-2026-05-22": {
       "chunks": {
-        "demo-book/ch00": {
-          "bookId": "demo-book",
+        "anthropic-guidelines/ch00": {
+          "bookId": "anthropic-guidelines",
           "chunkId": "ch00",
           "sentAt": "2026-05-22T00:00:00.000Z",
           "contextMode": "chunk-once-per-session"
@@ -94,7 +94,7 @@ Submitted user notes use `data/reading_sessions.json` to avoid sending the same 
       },
       "annotations": {
         "ann_...": {
-          "bookId": "demo-book",
+          "bookId": "anthropic-guidelines",
           "chunkId": "ch00",
           "submittedAt": "2026-05-22T00:00:00.000Z"
         }

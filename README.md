@@ -104,6 +104,9 @@ python3 scripts/import_text.py ./book.txt \
   --heading-regex "^第[一二三四五六七八九十百零〇0-9]+[章节回].*$"
 ```
 
+If a loose heading regex catches navigation labels or other tiny sections, add
+`--min-section-chars 100` or a similar threshold.
+
 EPUB:
 
 ```bash

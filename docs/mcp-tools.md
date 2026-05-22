@@ -9,7 +9,7 @@ Returns all imported books with progress and annotation counts. Annotation count
 Input:
 
 ```json
-{ "bookId": "demo-book" }
+{ "bookId": "anthropic-guidelines" }
 ```
 
 Returns chunks in reading order, including `prevId`, `nextId`, `read`, and `annotationCount`.
@@ -19,7 +19,7 @@ Returns chunks in reading order, including `prevId`, `nextId`, `read`, and `anno
 Input:
 
 ```json
-{ "bookId": "demo-book", "chunkId": "ch00" }
+{ "bookId": "anthropic-guidelines", "chunkId": "ch00" }
 ```
 
 Returns the chunk text plus neighboring ids.
@@ -29,7 +29,7 @@ Returns the chunk text plus neighboring ids.
 Input:
 
 ```json
-{ "bookId": "demo-book", "query": "margin", "limit": 10 }
+{ "bookId": "anthropic-guidelines", "query": "values", "limit": 10 }
 ```
 
 Returns matching snippets.
@@ -42,7 +42,7 @@ Input:
 
 ```json
 {
-  "bookId": "demo-book",
+  "bookId": "anthropic-guidelines",
   "chunkId": "ch00",
   "quote": "this line matters",
   "note": "This is a resonance note.",
@@ -61,7 +61,7 @@ For a user-facing reading app, create user notes with:
 
 ```json
 {
-  "bookId": "demo-book",
+  "bookId": "anthropic-guidelines",
   "chunkId": "ch00",
   "quote": "this line matters",
   "note": "I want Claude to comment on this.",
@@ -75,7 +75,7 @@ For a user-facing reading app, create user notes with:
 Input:
 
 ```json
-{ "bookId": "demo-book", "chunkId": "ch00", "kind": "resonance", "status": "published" }
+{ "bookId": "anthropic-guidelines", "chunkId": "ch00", "kind": "resonance", "status": "published" }
 ```
 
 All fields are optional except `bookId` in most practical use.
@@ -86,7 +86,7 @@ Input:
 
 ```json
 {
-  "bookId": "demo-book",
+  "bookId": "anthropic-guidelines",
   "sessionId": "claude-session-2026-05-22",
   "contextMode": "chunk-once-per-session"
 }
@@ -112,7 +112,7 @@ Input:
 
 ```json
 {
-  "parentId": "ann_demo_user_001",
+  "parentId": "ann_guidelines_user_001",
   "note": "Claude's reply under this user note.",
   "kind": "reply"
 }
@@ -125,7 +125,7 @@ Creates a Claude annotation with `parentId` pointing to the original note. If `b
 Input:
 
 ```json
-{ "bookId": "demo-book", "chunkId": "ch00" }
+{ "bookId": "anthropic-guidelines", "chunkId": "ch00" }
 ```
 
 Marks a chunk as read and updates `lastChunkId`.
@@ -135,5 +135,5 @@ Marks a chunk as read and updates `lastChunkId`.
 Input:
 
 ```json
-{ "bookId": "demo-book" }
+{ "bookId": "anthropic-guidelines" }
 ```

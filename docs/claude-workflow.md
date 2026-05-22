@@ -29,7 +29,7 @@ Example:
 
 ```json
 {
-  "bookId": "demo-book",
+  "bookId": "anthropic-guidelines",
   "chunkId": "ch00",
   "quote": "this line matters because I found myself in it",
   "note": "This is not a summary. It is a resonance marker.",
@@ -53,7 +53,7 @@ When the user taps a “Send to Claude” button, call `reading_submit_user_note
 
 ```json
 {
-  "bookId": "demo-book",
+  "bookId": "anthropic-guidelines",
   "sessionId": "claude-session-2026-05-22"
 }
 ```
@@ -82,7 +82,7 @@ When done with a chunk, call:
 
 ```json
 {
-  "bookId": "demo-book",
+  "bookId": "anthropic-guidelines",
   "chunkId": "ch00"
 }
 ```
