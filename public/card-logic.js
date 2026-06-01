@@ -19,7 +19,8 @@ export function isHumanAuthor(author) {
 }
 
 export function isClaudeAuthor(author) {
-  return String(author || "").toLowerCase() === "claude";
+  const value = String(author || "").toLowerCase();
+  return !isHumanAuthor(value) && (!value || value === "claude" || value === "assistant");
 }
 
 export function normalizeForOverlap(value) {

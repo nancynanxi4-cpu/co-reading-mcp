@@ -46,6 +46,12 @@ export function sendError(res, status, message) {
 }
 
 export async function readBody(req, { maxBytes = defaultMaxBodyBytes, allowEmpty = true } = {}) {
+  const contentType = req.headers["content-type"] || "";
+  if (contentType && !contentType.includes("application/json")) {
+    const err = new Error("Content-Type must be application/json");
+    err.statusCode = 415;
+    throw err;
+  }
   const chunks = [];
   let size = 0;
   for await (const chunk of req) {

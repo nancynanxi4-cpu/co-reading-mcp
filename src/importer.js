@@ -1,4 +1,4 @@
-import { access, appendFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { access, appendFile, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { execFile } from "node:child_process";
 import crypto from "node:crypto";
@@ -16,6 +16,25 @@ const maxImportBytes = Number(process.env.READING_IMPORT_MAX_BYTES || 25_000_000
 const maxImportOutputBytes = Number(process.env.READING_IMPORT_MAX_OUTPUT_BYTES || 10_000_000);
 const uploadSessions = new Map();
 let importQueue = Promise.resolve();
+const STALE_UPLOAD_MS = 60 * 60 * 1000; // 1 hour
+
+async function cleanupStaleUploads() {
+  try {
+    const entries = await readdir(uploadsDir).catch(() => []);
+    const now = Date.now();
+    for (const entry of entries) {
+      const dir = path.join(uploadsDir, entry);
+      try {
+        const info = await stat(dir);
+        if (info.isDirectory() && now - info.mtimeMs > STALE_UPLOAD_MS) {
+          await rm(dir, { recursive: true, force: true });
+        }
+      } catch { /* ignore per-entry errors */ }
+    }
+  } catch { /* uploads dir may not exist yet */ }
+}
+
+cleanupStaleUploads();
 
 function withImportLock(operation) {
   const run = importQueue.then(operation, operation);
