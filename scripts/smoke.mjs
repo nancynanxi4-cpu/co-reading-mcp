@@ -533,6 +533,19 @@ for (let attempt = 0; attempt < 30; attempt += 1) {
 if (!httpBooks) throw new Error("HTTP reader API did not start");
 const httpMcpInit = await httpMcpRequest("initialize", {});
 const httpChunk = await fetchJson("/api/books/anthropic-guidelines/chunks/ch00");
+const repeatedQuote = "Anthropic";
+const firstRepeatedOffset = httpChunk.text.indexOf(repeatedQuote);
+const secondRepeatedOffset = httpChunk.text.indexOf(repeatedQuote, firstRepeatedOffset + repeatedQuote.length);
+const httpOffsetNote = await fetchJson("/api/annotations", {
+  method: "POST",
+  body: {
+    bookId: "anthropic-guidelines",
+    chunkId: "ch00",
+    quote: repeatedQuote,
+    quoteOffset: secondRepeatedOffset,
+    note: "HTTP reader offset note.",
+  },
+});
 const httpNote = await fetchJson("/api/annotations", {
   method: "POST",
   body: {
@@ -547,6 +560,14 @@ const httpReply = await fetchJson("/api/replies", {
   body: {
     parentId: httpNote.id,
     note: "HTTP reader reply.",
+    author: "user",
+  },
+});
+const httpReplyToClaude = await fetchJson("/api/replies", {
+  method: "POST",
+  body: {
+    parentId: "ann_guidelines_001",
+    note: "HTTP reader reply to Claude should remain staged.",
     author: "user",
   },
 });
@@ -859,11 +880,17 @@ if (httpMcpInit.result?.serverInfo?.name !== "co-reading-mcp") {
 if (!httpChunk.text.includes("Claude and the mission of Anthropic")) {
   throw new Error("HTTP API did not read chunk text");
 }
+if (httpOffsetNote.quoteOffset !== secondRepeatedOffset) {
+  throw new Error("HTTP API did not preserve explicit quoteOffset for repeated text");
+}
 if (!httpNote.id) {
   throw new Error("HTTP API did not create a user note");
 }
 if (httpReply.parentId !== httpNote.id || httpReply.kind !== "reply") {
   throw new Error("HTTP API did not attach a reply");
+}
+if (httpReplyToClaude.parentId !== "ann_guidelines_001" || httpReplyToClaude.status !== "open") {
+  throw new Error("HTTP reader replies to Claude annotations should stay staged until submit");
 }
 if (!httpCard.id || !httpCards.some((card) => card.id === httpCard.id)) {
   throw new Error("HTTP API did not create/list reading cards");

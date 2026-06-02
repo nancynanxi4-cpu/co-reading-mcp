@@ -1214,7 +1214,13 @@ export async function annotatePassage(input) {
     if (!note) throw new Error("note is required");
 
     const chunk = await readChunk(bookId, chunkId);
-    const quoteOffset = chunk.text.indexOf(quote);
+    const requestedQuoteOffset = Number(input.quoteOffset);
+    const quoteOffset =
+      Number.isInteger(requestedQuoteOffset) &&
+      requestedQuoteOffset >= 0 &&
+      chunk.text.slice(requestedQuoteOffset, requestedQuoteOffset + quote.length) === quote
+        ? requestedQuoteOffset
+        : chunk.text.indexOf(quote);
     const author = input.author || "claude";
     const parentId = input.parentId || null;
     const existingAnnotations = await readAllAnnotations();

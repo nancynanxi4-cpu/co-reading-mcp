@@ -203,6 +203,7 @@ export const tools = [
         bookId: { type: "string" },
         chunkId: { type: "string" },
         quote: { type: "string" },
+        quoteOffset: { type: "number" },
         note: { type: "string" },
         kind: { type: "string" },
         mood: { type: "string" },

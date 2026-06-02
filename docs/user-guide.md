@@ -106,6 +106,8 @@ In the reader:
 
 The server sends each note once and marks it submitted so the next send does not duplicate it.
 
+Replies that you type under Claude's margin notes follow the same rule: they are saved as open user replies first, then included the next time you click `Send to Claude`.
+
 ## Claude Notes and Replies
 
 Claude should:
@@ -116,6 +118,8 @@ Claude should:
 4. Use `reading_mark_read` when done with a chunk.
 
 Claude replies are stored under the original note with `parentId`, so the reader can show a thread around the same passage.
+
+Replies can nest more than one level deep. The reader renders the whole thread under the original highlighted passage, so a Claude reply under a human reply still appears in the margin instead of becoming a detached note.
 
 ## Context Policy
 

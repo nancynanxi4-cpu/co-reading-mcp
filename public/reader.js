@@ -1,4 +1,4 @@
-import { buildCardCandidates, normalizeForOverlap, pickCard, sharedNoteIdSet } from "./card-logic.js";
+import { buildCardCandidates, pickCard, sharedNoteIdSet } from "./card-logic.js";
 
 const state = {
   books: [],
@@ -8,7 +8,9 @@ const state = {
   chunkId: null,
   chunk: null,
   quote: "",
+  quoteOffset: null,
   selectedQuote: "",
+  selectedQuoteOffset: null,
   activeAnnotationId: null,
   cardCandidates: [],
   cardIndex: 0,
@@ -180,29 +182,44 @@ function renderChunks() {
 
 function renderText() {
   if (!state.chunk) return;
-  let html = escapeHtml(state.chunk.text);
+  const text = state.chunk.text || "";
   const notes = state.annotations.filter((item) => item.chunkId === state.chunkId);
   const sharedIds = sharedNoteIdSet(notes);
-  const seenQuotes = new Set();
+  const highlights = [];
+  const occupied = [];
   const rootNotes = notes
     .filter((item) => !item.parentId && item.quote)
-    .sort((a, b) => Number(sharedIds.has(b.id)) - Number(sharedIds.has(a.id)));
+    .sort((a, b) => {
+      const left = Number.isInteger(a.quoteOffset) ? a.quoteOffset : text.indexOf(a.quote);
+      const right = Number.isInteger(b.quoteOffset) ? b.quoteOffset : text.indexOf(b.quote);
+      return left - right;
+    });
   for (const note of rootNotes) {
-    const normalizedQuote = normalizeForOverlap(note.quote);
-    if (seenQuotes.has(normalizedQuote)) continue;
-    seenQuotes.add(normalizedQuote);
-    const quote = escapeHtml(note.quote);
-    if (quote && html.includes(quote)) {
-      const shared = sharedIds.has(note.id);
-      const bookmark = shared ? `<span class="shared-bookmark" title="这里有两个人的折痕。">此处有回声</span>` : "";
-      html = html.replace(
-        quote,
-        `<mark class="${note.id === state.activeAnnotationId ? "active" : ""} ${shared ? "shared" : ""}" data-note-id="${escapeHtml(note.id)}" title="${escapeHtml(note.note)}">${quote}</mark>${bookmark}${
-          note.id === state.activeAnnotationId ? renderInlineNote(note, notes) : ""
-        }`,
-      );
-    }
+    const quote = String(note.quote || "");
+    const requestedOffset = Number(note.quoteOffset);
+    const start =
+      Number.isInteger(requestedOffset) && requestedOffset >= 0 && text.slice(requestedOffset, requestedOffset + quote.length) === quote
+        ? requestedOffset
+        : text.indexOf(quote);
+    if (!quote || start < 0) continue;
+    const end = start + quote.length;
+    if (occupied.some((range) => start < range.end && end > range.start)) continue;
+    occupied.push({ start, end });
+    highlights.push({ start, end, note, shared: sharedIds.has(note.id) });
   }
+
+  let html = "";
+  let cursor = 0;
+  for (const highlight of highlights) {
+    html += escapeHtml(text.slice(cursor, highlight.start));
+    const quote = escapeHtml(text.slice(highlight.start, highlight.end));
+    const bookmark = highlight.shared ? `<span class="shared-bookmark" title="这里有两个人的折痕。">此处有回声</span>` : "";
+    html += `<mark class="${highlight.note.id === state.activeAnnotationId ? "active" : ""} ${highlight.shared ? "shared" : ""}" data-note-id="${escapeHtml(highlight.note.id)}" title="${escapeHtml(highlight.note.note)}">${quote}</mark>${bookmark}${
+      highlight.note.id === state.activeAnnotationId ? renderInlineNote(highlight.note, notes) : ""
+    }`;
+    cursor = highlight.end;
+  }
+  html += escapeHtml(text.slice(cursor));
   $("text").innerHTML = html;
   bindMarkActions();
 }
@@ -392,9 +409,63 @@ function openCardPanel() {
 
 function updateSelectionAction() {
   const selection = window.getSelection();
-  const quote = selection?.toString().trim() || "";
-  state.selectedQuote = quote;
-  $("note-selection").disabled = !quote || !state.bookId || !state.chunkId;
+  const details = selectionDetails(selection);
+  state.selectedQuote = details?.quote || "";
+  state.selectedQuoteOffset = details?.quoteOffset ?? null;
+  $("note-selection").disabled = !state.selectedQuote || !state.bookId || !state.chunkId;
+}
+
+function elementForNode(node) {
+  return node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
+}
+
+function countOccurrences(haystack, needle) {
+  if (!needle) return 0;
+  let count = 0;
+  let index = 0;
+  while (index <= haystack.length) {
+    const found = haystack.indexOf(needle, index);
+    if (found === -1) break;
+    count += 1;
+    index = found + Math.max(needle.length, 1);
+  }
+  return count;
+}
+
+function findOccurrence(haystack, needle, occurrence) {
+  let index = -1;
+  let from = 0;
+  for (let current = 0; current <= occurrence; current += 1) {
+    index = haystack.indexOf(needle, from);
+    if (index === -1) return -1;
+    from = index + Math.max(needle.length, 1);
+  }
+  return index;
+}
+
+function selectionDetails(selection) {
+  if (!selection || selection.rangeCount === 0 || !state.chunk?.text) return null;
+  const rawQuote = selection.toString();
+  const quote = rawQuote.trim();
+  if (!quote) return null;
+
+  const range = selection.getRangeAt(0);
+  const textEl = $("text");
+  const startEl = elementForNode(range.startContainer);
+  const endEl = elementForNode(range.endContainer);
+  if (!startEl || !endEl) return null;
+  if (!textEl.contains(range.commonAncestorContainer) || !textEl.contains(startEl) || !textEl.contains(endEl)) return null;
+  if (startEl.closest(".inline-note, .shared-bookmark") || endEl.closest(".inline-note, .shared-bookmark")) return null;
+
+  const prefixRange = range.cloneRange();
+  prefixRange.selectNodeContents(textEl);
+  prefixRange.setEnd(range.startContainer, range.startOffset);
+  const occurrence = countOccurrences(prefixRange.toString(), quote);
+  const quoteOffset = findOccurrence(state.chunk.text, quote, occurrence);
+  return {
+    quote,
+    quoteOffset: quoteOffset >= 0 ? quoteOffset : null,
+  };
 }
 
 async function loadBooks() {
@@ -479,6 +550,7 @@ async function selectChunk(chunkId) {
 
 function openNoteForm(quote) {
   state.quote = quote.trim();
+  state.quoteOffset = state.selectedQuote === state.quote ? state.selectedQuoteOffset : null;
   if (!state.bookId || !state.chunkId || !state.quote) return;
   $("quote-preview").textContent = state.quote;
   $("note").value = "";
@@ -568,13 +640,16 @@ $("cancel-note").addEventListener("click", () => {
 
 $("note-form").addEventListener("submit", async (event) => {
   event.preventDefault();
+  const note = $("note").value.trim();
+  if (!note) return;
   await api("/api/annotations", {
     method: "POST",
     body: {
       bookId: state.bookId,
       chunkId: state.chunkId,
       quote: state.quote,
-      note: $("note").value.trim(),
+      quoteOffset: state.quoteOffset,
+      note,
       kind: "note",
     },
   });

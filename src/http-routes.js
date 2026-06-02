@@ -195,6 +195,7 @@ export async function handleApi(req, res, url, options = {}) {
         ...body,
         author: body.author || "user",
         kind: body.kind || "reply",
+        status: body.status || "open",
       }),
     );
   }

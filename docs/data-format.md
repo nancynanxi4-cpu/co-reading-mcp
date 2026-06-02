@@ -48,19 +48,22 @@ Annotations are stored as JSONL in `data/annotations.jsonl`.
   "tags": ["optional"],
   "status": "published",
   "parentId": null,
+  "quoteOffset": 42,
   "createdAt": "2026-05-22T00:00:00.000Z"
 }
 ```
 
 `kind` is intentionally flexible. Suggested values are `annotation`, `question`, `summary`, `feeling`, and `resonance`.
 
+`quoteOffset` is the character offset of the selected quote inside the chunk text. It is optional for older records, but reader UIs should send it when possible so repeated quotes anchor to the exact selected occurrence.
+
 `status` supports the bidirectional co-reading flow:
 
-- `open`: a local user note waiting to be submitted
+- `open`: a local user note or user reply waiting to be submitted
 - `submitted`: a user note that has already been sent to Claude
 - `published`: Claude notes, Claude replies, or already-public notes
 
-`parentId` creates threads. A Claude reply under a user note stores the user's annotation id as `parentId`.
+`parentId` creates threads. A reply stores its parent annotation or reply id as `parentId`, so conversations can nest under the same highlighted passage.
 
 ## Cards
 

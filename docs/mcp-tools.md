@@ -136,6 +136,7 @@ Input:
   "bookId": "anthropic-guidelines",
   "chunkId": "ch00",
   "quote": "this line matters",
+  "quoteOffset": 42,
   "note": "This is a resonance note.",
   "author": "claude",
   "kind": "resonance",
@@ -146,7 +147,7 @@ Input:
 }
 ```
 
-Writes one JSONL annotation. If the quote is present in the chunk, the returned object includes a `quoteOffset`. Root annotations also return `annotationIndexInBook`, `annotationIndexInChunk`, and a short `message` such as “Saved annotation 12 in this book.”
+Writes one JSONL annotation. `quoteOffset` is optional, but a reader UI should send it when available so repeated text is anchored to the selected occurrence instead of the first matching quote. If the quote is present in the chunk, the returned object includes a `quoteOffset`. Root annotations also return `annotationIndexInBook`, `annotationIndexInChunk`, and a short `message` such as “Saved annotation 12 in this book.”
 
 For a user-facing reading app, create user notes with:
 
@@ -155,6 +156,7 @@ For a user-facing reading app, create user notes with:
   "bookId": "anthropic-guidelines",
   "chunkId": "ch00",
   "quote": "this line matters",
+  "quoteOffset": 42,
   "note": "I want Claude to comment on this.",
   "author": "user",
   "status": "open"
@@ -229,9 +231,12 @@ Input:
 {
   "parentId": "ann_guidelines_user_001",
   "note": "Claude's reply under this user note.",
-  "kind": "reply"
+  "kind": "reply",
+  "status": "published"
 }
 ```
+
+Claude-facing MCP replies are published immediately. Human replies typed in the built-in web reader are created through the HTTP API as `status: "open"` and stay staged until the reader clicks `Send to Claude`.
 
 Creates a Claude annotation with `parentId` pointing to the original note. If `bookId`, `chunkId`, or `quote` are omitted, they are inherited from the parent annotation.
 
