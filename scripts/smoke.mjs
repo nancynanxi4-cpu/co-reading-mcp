@@ -440,9 +440,18 @@ const reply = await request("tools/call", {
   name: "reading_reply_to_annotation",
   arguments: { parentId: "ann_guidelines_user_001", note: "Claude can answer in the margin." },
 });
+const replyId = contentJson(reply).id;
+const nestedReply = await request("tools/call", {
+  name: "reading_reply_to_annotation",
+  arguments: { parentId: replyId, note: "Claude can also answer a reply in the same thread." },
+});
 const replies = await request("tools/call", {
   name: "reading_list_annotations",
   arguments: { parentId: "ann_guidelines_user_001" },
+});
+const nestedReplies = await request("tools/call", {
+  name: "reading_list_annotations",
+  arguments: { parentId: replyId },
 });
 const submissionsList = await request("tools/call", {
   name: "reading_list_submissions",
@@ -825,6 +834,12 @@ if (!reply.result?.content?.[0]?.text.includes('"parentId": "ann_guidelines_user
 }
 if (!replies.result?.content?.[0]?.text.includes("Claude can answer in the margin")) {
   throw new Error("reading_list_annotations did not find the attached reply");
+}
+if (!nestedReply.result?.content?.[0]?.text.includes(`"parentId": "${replyId}"`)) {
+  throw new Error("reading_reply_to_annotation did not attach a nested reply");
+}
+if (!nestedReplies.result?.content?.[0]?.text.includes("Claude can also answer a reply")) {
+  throw new Error("reading_list_annotations did not find the nested reply");
 }
 if (!badBookPath.error?.message.includes("Path escapes data directory")) {
   throw new Error("reading_read_chunk did not reject path traversal bookId");

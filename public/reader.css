@@ -317,6 +317,7 @@ h2 {
 }
 
 .reply {
+  margin-left: calc(var(--reply-depth, 0) * 10px);
   padding: 10px 12px;
   border-left: 3px solid transparent;
   border-radius: 12px;
@@ -330,6 +331,12 @@ h2 {
 .reply-body {
   margin: 0;
   line-height: 1.5;
+}
+
+.reply-children {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .reply-form {

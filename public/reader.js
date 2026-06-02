@@ -100,18 +100,40 @@ function replyClass(reply, root) {
   return sameAuthor ? "reply root-author" : "reply other-author";
 }
 
-function renderReply(reply, root) {
-  return `<div class="${replyClass(reply, root)}">
+function repliesFor(parentId, notes) {
+  return notes.filter((item) => item.parentId === parentId);
+}
+
+function replyCount(parentId, notes, seen = new Set()) {
+  if (seen.has(parentId)) return 0;
+  seen.add(parentId);
+  return repliesFor(parentId, notes).reduce((count, reply) => count + 1 + replyCount(reply.id, notes, seen), 0);
+}
+
+function renderReply(reply, root, notes, depth = 1, seen = new Set()) {
+  if (!reply.id || seen.has(reply.id)) return "";
+  const nextSeen = new Set(seen);
+  nextSeen.add(reply.id);
+  const children = repliesFor(reply.id, notes);
+  const visibleDepth = Math.min(depth, 4);
+  return `<div class="${replyClass(reply, root)}" style="--reply-depth: ${visibleDepth}">
     <p class="reply-body">${escapeHtml(reply.note)}</p>
     <div class="note-meta">${escapeHtml(formatIdentity(reply.author))} · ${escapeHtml(reply.kind || "reply")}</div>
+    ${
+      children.length
+        ? `<div class="reply-children">${children
+            .map((child) => renderReply(child, root, notes, depth + 1, nextSeen))
+            .join("")}</div>`
+        : ""
+    }
   </div>`;
 }
 
 function renderThread(note, notes) {
-  const replies = notes.filter((item) => item.parentId === note.id);
+  const replies = repliesFor(note.id, notes);
   const draft = state.replyDrafts[note.id] || "";
   return `<div class="thread">
-    ${replies.map((reply) => renderReply(reply, note)).join("")}
+    ${replies.map((reply) => renderReply(reply, note, notes, 1, new Set([note.id]))).join("")}
     <form class="reply-form" data-parent-id="${escapeHtml(note.id)}">
       <textarea rows="2" placeholder="Reply in this margin...">${escapeHtml(draft)}</textarea>
       <button type="submit" class="primary-button">Reply</button>
@@ -204,14 +226,14 @@ function renderAnnotations() {
 
   $("margins").innerHTML = roots
     .map((note) => {
-      const replies = notes.filter((item) => item.parentId === note.id);
+      const replies = replyCount(note.id, notes);
       const expanded = note.id === state.activeAnnotationId;
       const isShared = sharedNoteIdSet(notes).has(note.id);
       return `<article class="note-card ${(note.status || "") === "open" ? "open" : ""} ${expanded ? "active" : ""}" data-note-id="${escapeHtml(note.id)}" tabindex="0">
         ${isShared ? `<p class="shared-line">这里有两个人的折痕。</p>` : ""}
         <p class="note-quote">${escapeHtml(note.quote)}</p>
         <p class="note-body">${escapeHtml(note.note)}</p>
-        <div class="note-meta">${escapeHtml(formatIdentity(note.author))} · ${escapeHtml(note.kind || "note")} · ${escapeHtml(note.status || "published")}${replies.length ? ` · ${replies.length} replies` : ""}</div>
+        <div class="note-meta">${escapeHtml(formatIdentity(note.author))} · ${escapeHtml(note.kind || "note")} · ${escapeHtml(note.status || "published")}${replies ? ` · ${replies} replies` : ""}</div>
         ${
           expanded
             ? renderThread(note, notes)
