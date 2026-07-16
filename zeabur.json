@@ -1,0 +1,8 @@
+{
+  "build": {
+    "command": "yarn install"
+  },
+  "start": {
+    "command": "yarn start:sse"
+  }
+}
