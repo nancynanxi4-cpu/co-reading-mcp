@@ -505,7 +505,7 @@ function isHumanAuthor(author) {
 
 function isClaudeAuthor(author) {
   const value = String(author || "").toLowerCase();
-  return !isHumanAuthor(value) && (!value || value === "claude" || value === "assistant");
+  return !isHumanAuthor(value) && value !== "";
 }
 
 function isPrivateHumanAnnotation(annotation) {
