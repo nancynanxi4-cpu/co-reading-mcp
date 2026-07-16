@@ -476,7 +476,7 @@ export async function callTool(name, args = {}) {
       if (args.confirm !== true) throw new Error("reading_delete_book requires confirm: true");
       return textContent(await deleteBook(args.bookId));
     case "reading_annotate_passage":
-      return textContent(await annotatePassage({ ...args, author: "claude", status: "published" }));
+      return textContent(await annotatePassage({ ...args, author: args.author || "claude", status: "published" }));
     case "reading_list_annotations":
       return textContent(await listAnnotations(args));
     case "reading_submit_user_notes":
@@ -486,7 +486,7 @@ export async function callTool(name, args = {}) {
     case "reading_read_submission":
       return textContent(await readSubmission(args.submissionId));
     case "reading_reply_to_annotation":
-      return textContent(await replyToAnnotation({ ...args, author: "claude", status: "published" }));
+      return textContent(await replyToAnnotation({ ...args, author: args.author || "claude", status: "published" }));
     case "reading_mark_read":
       return textContent(await markRead(args.bookId, args.chunkId));
     case "reading_card_inbox":
